@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romance for Ivan</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin:0;
+    padding:30px;
+    font-family:'Quicksand', sans-serif;
+    text-align:center;
+    transition: background 0.6s ease;
+    background: linear-gradient(to bottom right,#ffe6ea,#fff);
+    overflow-x:hidden;
+}
+
+h1 {
+    font-family:'Pacifico', cursive;
+    font-size:42px;
+    color:#ff4d79;
+}
+
+h2 { color:#ff4d79; margin-top:30px; }
+
+.mood-box {
+    max-width:400px;
+    margin:15px auto;
+    padding:15px;
+    border-radius:15px;
+}
+
+.mood-emoji { font-size:42px; }
+
+input[type=range], input[type=file], input[type=text] { width:100%; max-width:400px; }
+
+textarea {
+    width:90%;
+    max-width:400px;
+    height:70px;
+    padding:10px;
+}
+
+button {
+    padding:10px 18px;
+    border-radius:20px;
+    border:none;
+    background:#ff4d79;
+    color:white;
+    cursor:pointer;
+    margin:5px 0;
+}
+
+.media {
+    max-width:400px;
+    margin:10px auto;
+}
+
+.media img, .media video {
+    width:100%;
+    border-radius:12px;
+    margin-top:10px;
+}
+
+ul { list-style:none; padding:0; }
+
+li {
+    background: rgba(255,255,255,0.85);
+    margin:8px auto;
+    padding:10px;
+    max-width:400px;
+    border-radius:10px;
+}
+
+.sparkle {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background: pink;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: fade 1s forwards;
+}
+
+@keyframes fade {
+    to { opacity: 0; transform: scale(3); }
+}
+
+/* Chat styles */
+#chatBox {
+    max-width:400px;
+    margin:10px auto;
+    height:300px;
+    overflow-y:auto;
+    background:#fff8f8;
+    padding:10px;
+    border-radius:12px;
+    border:1px solid #ffb3c6;
+    text-align:left;
+}
+
+.chat-message {
+    margin:5px 0;
+}
+
+.chat-message b {
+    font-weight:bold;
+}
+
+.chat-message img, .chat-message video {
+    max-width:80%;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>❤️ Romance for Ivan</h1>
+<p>From Faith, with love</p>
+
+<!-- Mood Tracer -->
+<h2>🎵 Mood Tracer</h2>
+<input type="range" min="0" max="4" value="2" oninput="updateMood(this.value)">
+<div class="mood-box" id="moodBox">
+    <div class="mood-emoji" id="moodEmoji">😊</div>
+    <p id="moodText">Soft & Happy</p>
+</div>
+
+<!-- Love Song -->
+<h2>🎵 Our Love Song — Unanifaa (Iyanii)</h2>
+<button id="playSongBtn">Play Love Song ❤️</button>
+<div style="max-width:400px;margin:0 auto;">
+    <iframe 
+        id="songPlayer"
+        width="100%" 
+        height="225"
+        src="https://www.youtube.com/embed/eXdo_qXpbe4?enablejsapi=1"
+        title="Unanifaa — Iyanii"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+    </iframe>
+</div>
+
+<!-- Media Upload -->
+<h2>📸 Upload Memories</h2>
+<input type="file" accept="image/*,video/*" onchange="uploadMedia(this)">
+<div id="mediaGallery"></div>
+
+<!-- Text Memories -->
+<h2>💭 Written Memories</h2>
+<textarea id="memoryInput" placeholder="Write a sweet memory..."></textarea><br>
+<button onclick="addMemory()">Save Memory</button>
+<ul id="memoryList"></ul>
+
+<!-- Chat Section -->
+<h2>💌 Chat with Ivan</h2>
+<div id="chatBox"></div>
+<input type="text" id="chatInput" placeholder="Write a message..." style="width:70%;padding:8px;border-radius:12px;border:1px solid #ffb3c6;">
+<input type="file" id="chatMedia" accept="image/*,video/*">
+<button onclick="sendMessage()">Send ❤️</button>
+
+<footer style="margin-top:40px;color:gray;">
+Faith ❤️ Ivan
+</footer>
+
+<script>
+/* Mood themes */
+function updateMood(v) {
+    const moods = [
+        {e:"😔",t:"Missing You",b:"linear-gradient(#dfe9f3,#fff)"},
+        {e:"😌",t:"Calm Vibes",b:"linear-gradient(#e0f7fa,#fff)"},
+        {e:"😊",t:"Soft & Happy",b:"linear-gradient(#ffe6ea,#fff)"},
+        {e:"😍",t:"In Love",b:"linear-gradient(#ffccd5,#fff)"},
+        {e:"❤️",t:"Crazy About You",b:"linear-gradient(#ffb3c6,#fff)"}
+    ];
+    document.body.style.background = moods[v].b;
+    moodEmoji.textContent = moods[v].e;
+    moodText.textContent = moods[v].t;
+}
+
+/* Memories storage */
+const list = document.getElementById("memoryList");
+const memoryInput = document.getElementById("memoryInput");
+const gallery = document.getElementById("mediaGallery");
+
+window.onload = () => {
+    (JSON.parse(localStorage.getItem("memories")) || []).forEach(addToList);
+    (JSON.parse(localStorage.getItem("media")) || []).forEach(m => displayMedia(m.type, m.data));
+    (JSON.parse(localStorage.getItem("chatMessages")) || []).forEach(displayMessage);
+};
+
+/* Text memories */
+function addMemory() {
+    const t = memoryInput.value.trim();
+    if (!t) return;
+    const mem = JSON.parse(localStorage.getItem("memories")) || [];
+    mem.push(t);
+    localStorage.setItem("memories", JSON.stringify(mem));
+    addToList(t);
+    memoryInput.value = "";
+}
+
+function addToList(t) {
+    const li = document.createElement("li");
+    li.textContent = t;
+    list.appendChild(li);
+}
+
+/* Media upload */
+function uploadMedia(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        const media = JSON.parse(localStorage.getItem("media")) || [];
+        media.push({type:file.type,data:reader.result});
+        localStorage.setItem("media", JSON.stringify(media));
+        displayMedia(file.type,reader.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function displayMedia(type,data) {
+    const div = document.createElement("div");
+    div.className="media";
+    if(type.startsWith("image")) {
+        const img=document.createElement("img");
+        img.src=data; div.appendChild(img);
+    } else {
+        const video=document.createElement("video");
+        video.src=data; video.controls=true; div.appendChild(video);
+    }
+    gallery.appendChild(div);
+}
+
+/* Sparkles */
+document.addEventListener("mousemove", e => {
+    const s = document.createElement("div");
+    s.className="sparkle";
+    s.style.left=e.clientX+"px";
+    s.style.top=e.clientY+"px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1000);
+});
+document.addEventListener("touchmove", e => {
+    const t = e.touches[0];
+    if(!t) return;
+    const s = document.createElement("div");
+    s.className="sparkle";
+    s.style.left=t.clientX+"px";
+    s.style.top=t.clientY+"px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1000);
+});
+
+/* YouTube API for autoplay */
+let player;
+function onYouTubeIframeAPIReady() { player = new YT.Player('songPlayer'); }
+let tag = document.createElement('script');
+tag.src="https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
+
+/* Play song and hearts */
+document.getElementById('playSongBtn').addEventListener('click',()=>{
+    if(player && player.playVideo) {
+        player.playVideo();
+        startHearts();
+    }
+});
+
+function startHearts() {
+    document.addEventListener('mousemove', createHeart);
+    document.addEventListener('touchmove', createHeart);
+}
+
+function createHeart(e) {
+    const heart=document.createElement("div");
+    heart.textContent="❤️";
+    heart.style.position="fixed";
+    heart.style.left=(e.clientX||e.touches[0].clientX)+"px";
+    heart.style.top=(e.clientY||e.touches[0].clientY)+"px";
+    heart.style.fontSize=Math.random()*24+12+"px";
+    heart.style.opacity=1;
+    heart.style.pointerEvents="none";
+    document.body.appendChild(heart);
+    let top=parseInt(heart.style.top); let opacity=1;
+    const floatInterval=setInterval(()=>{
+        top-=2; opacity-=0.02;
+        heart.style.top=top+"px"; heart.style.opacity=opacity;
+        if(opacity<=0){clearInterval(floatInterval); heart.remove();}
+    },20);
+}
+
+/* Auto-change background based on song playback */
+const moodSections = [
+    {start:0, end:30, bg:"linear-gradient(to bottom right,#dfe9f3,#fff)"},
+    {start:30, end:60, bg:"linear-gradient(to bottom right,#e0f7fa,#fff)"},
+    {start:60, end:90, bg:"linear-gradient(to bottom right,#ffe6ea,#fff)"},
+    {start:90, end:120, bg:"linear-gradient(to bottom right,#ffccd5,#fff)"},
+    {start:120, end:180, bg:"linear-gradient(to bottom right,#ffb3c6,#fff)"}
+];
+let lastMoodIndex=-1;
+setInterval(()=>{
+    if(!player || !player.getCurrentTime) return;
+    const t = player.getCurrentTime();
+    for(let i=0;i<moodSections.length;i++){
+        if(t>=moodSections[i].start && t<moodSections[i].end){
+            if(lastMoodIndex!==i){
+                document.body.style.background=moodSections[i].bg;
+                lastMoodIndex=i;
+            }
+            break;
+        }
+    }
+},500);
+
+/* Chat functionality */
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+const chatMedia = document.getElementById("chatMedia");
+
+function sendMessage() {
+    const text = chatInput.value.trim();
+    const file = chatMedia.files[0];
+
+    if(!text && !file) return;
+
+    if(file){
+        const reader = new FileReader();
+        reader.onload = () => {
+            const msg = {text:text, media:reader.result, from:"Faith", time:new Date().toLocaleTimeString()};
+            saveAndDisplay(msg);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        const msg = {text:text, media:null, from:"Faith", time:new Date().toLocaleTimeString()};
+        saveAndDisplay(msg);
+    }
+
+    chatInput.value = "";
+    chatMedia.value = "";
+}
+
+function saveAndDisplay(msg){
+    const messages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+    messages.push(msg);
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+    displayMessage(msg);
+}
+
+function displayMessage(msg){
+    const div = document.createElement("div");
+    div.className="chat-message";
+    div.style.textAlign = msg.from==="Faith"?"right":"left";
+    div.innerHTML = `<b>${msg.from}</b>: ${msg.text?msg.text:""} ${msg.media?msg.media.startsWith("data:image")?`<img src="${msg.media}">`:`<video src="${msg.media}" controls></video>`:""} <br><small>${msg.time}</small>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+
+</body>
+</html>
