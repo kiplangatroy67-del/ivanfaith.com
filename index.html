@@ -10,12 +10,8 @@
 
 <style>
 body {
-    margin:0;
-    padding:30px;
-    font-family:'Quicksand', sans-serif;
-    text-align:center;
-    transition: background 0.6s ease;
-    background: linear-gradient(to bottom right,#ffe6ea,#fff);
+    margin:0; padding:30px; font-family:'Quicksand', sans-serif; text-align:center;
+    transition: background 0.6s ease; background: linear-gradient(to bottom right,#ffe6ea,#fff);
     overflow-x:hidden;
 }
 
@@ -24,8 +20,9 @@ h2 { color:#ff4d79; margin-top:30px; }
 
 .mood-box { max-width:400px; margin:15px auto; padding:15px; border-radius:15px; }
 .mood-emoji { font-size:42px; }
-input[type=range], input[type=file], input[type=text] { width:100%; max-width:400px; }
-textarea { width:90%; max-width:400px; height:70px; padding:10px; }
+
+input[type=range], input[type=file], input[type=text], textarea { width:100%; max-width:400px; }
+textarea { height:70px; padding:10px; }
 button { padding:10px 18px; border-radius:20px; border:none; background:#ff4d79; color:white; cursor:pointer; margin:5px 0; }
 
 .media { max-width:400px; margin:10px auto; }
@@ -34,42 +31,22 @@ button { padding:10px 18px; border-radius:20px; border:none; background:#ff4d79;
 ul { list-style:none; padding:0; }
 li { background: rgba(255,255,255,0.85); margin:8px auto; padding:10px; max-width:400px; border-radius:10px; }
 
-/* Sparkles */
 .sparkle {
     position: fixed; width: 6px; height: 6px; background: pink; border-radius: 50%;
     pointer-events: none; animation: fade 1s forwards;
 }
 @keyframes fade { to { opacity: 0; transform: scale(3); } }
 
-/* Chat styles */
+/* Chat */
 #chatBox { max-width:400px; margin:10px auto; height:300px; overflow-y:auto; background:#fff8f8;
     padding:10px; border-radius:12px; border:1px solid #ffb3c6; text-align:left;
 }
 .chat-message {
-    margin: 5px 0;
-    padding: 8px 12px;
-    border-radius: 15px;
-    max-width: 70%;
-    word-wrap: break-word;
-    clear: both;
+    margin: 5px 0; padding: 8px 12px; border-radius: 15px; max-width: 70%; word-wrap: break-word; clear: both;
 }
-.chat-message.self {
-    background-color: #ff4d79;
-    color: white;
-    margin-left: auto;
-    text-align: right;
-}
-.chat-message.other {
-    background-color: #ffe6ea;
-    color: #333;
-    margin-right: auto;
-    text-align: left;
-}
-.chat-message img, .chat-message video {
-    max-width: 100%;
-    border-radius: 10px;
-    margin-top: 5px;
-}
+.chat-message.self { background-color: #ff4d79; color: white; margin-left: auto; text-align: right; }
+.chat-message.other { background-color: #ffe6ea; color: #333; margin-right: auto; text-align: left; }
+.chat-message img, .chat-message video { max-width: 100%; border-radius: 10px; margin-top: 5px; }
 </style>
 </head>
 
@@ -78,7 +55,7 @@ li { background: rgba(255,255,255,0.85); margin:8px auto; padding:10px; max-widt
 <h1>❤️ Romance for Ivan</h1>
 <p>From Faith, with love</p>
 
-<!-- Mood Tracer -->
+<!-- Mood -->
 <h2>🎵 Mood Tracer</h2>
 <input type="range" min="0" max="4" value="2" oninput="updateMood(this.value)">
 <div class="mood-box" id="moodBox">
@@ -99,18 +76,17 @@ li { background: rgba(255,255,255,0.85); margin:8px auto; padding:10px; max-widt
     </iframe>
 </div>
 
-<!-- Media Upload -->
+<!-- Memories -->
 <h2>📸 Upload Memories</h2>
 <input type="file" accept="image/*,video/*" onchange="uploadMedia(this)">
 <div id="mediaGallery"></div>
 
-<!-- Text Memories -->
 <h2>💭 Written Memories</h2>
 <textarea id="memoryInput" placeholder="Write a sweet memory..."></textarea><br>
 <button onclick="addMemory()">Save Memory</button>
 <ul id="memoryList"></ul>
 
-<!-- Chat Section -->
+<!-- Chat -->
 <h2>💌 Chat with Ivan</h2>
 <input type="text" id="userName" placeholder="Enter your name"><br>
 <input type="text" id="chatInput" placeholder="Write a message..." style="width:70%;padding:8px;border-radius:12px;border:1px solid #ffb3c6;">
@@ -127,254 +103,146 @@ Faith ❤️ Ivan
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-/* =======================
-   Firebase Setup
-======================= */
+/* ===================== Firebase Setup ===================== */
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    databaseURL: "YOUR_DB_URL",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DB_URL",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const messagesRef = db.ref("romanceForIvan");
 
-/* =======================
-   User Name Persistence
-======================= */
+/* ===================== Name Persistence ===================== */
 const userNameInput = document.getElementById("userName");
 userNameInput.value = localStorage.getItem("chatName") || "";
-userNameInput.addEventListener("change", () => {
-    localStorage.setItem("chatName", userNameInput.value.trim());
-});
+userNameInput.addEventListener("change", () => localStorage.setItem("chatName", userNameInput.value.trim()));
 
-/* =======================
-   Chat Handling
-======================= */
+/* ===================== Chat ===================== */
 const chatInput = document.getElementById("chatInput");
 const chatMedia = document.getElementById("chatMedia");
 const sendBtn = document.getElementById("sendBtn");
 const chatBox = document.getElementById("chatBox");
 
-sendBtn.addEventListener("click", sendMessage);
+sendBtn.addEventListener("click", () => {
+  const text = chatInput.value.trim();
+  if(!text && !chatMedia.files.length) return;
 
-function sendMessage() {
-    const text = chatInput.value.trim();
-    if (!text && !chatMedia.files.length) return;
+  const name = userNameInput.value.trim() || "Anonymous";
 
-    const name = userNameInput.value.trim() || "Anonymous";
-
-    if (chatMedia.files.length) {
-        const reader = new FileReader();
-        reader.onload = () => pushMessage(name, text, reader.result, chatMedia.files[0].type);
-        reader.readAsDataURL(chatMedia.files[0]);
-    } else {
-        pushMessage(name, text, null, null);
-    }
-
-    chatInput.value = "";
-    chatMedia.value = "";
-}
-
-function pushMessage(name, text, mediaData, mediaType) {
-    messagesRef.push({ from: name, text, mediaData, mediaType, time: new Date().toLocaleTimeString() });
-}
-
-messagesRef.on("child_added", snapshot => {
-    const msg = snapshot.val();
-    const div = document.createElement("div");
-
-    const currentUser = userNameInput.value.trim() || "Anonymous";
-    const isSelf = msg.from === currentUser;
-
-    div.className = "chat-message " + (isSelf ? "self" : "other");
-
-    let mediaHTML = "";
-    if (msg.mediaData) {
-        if (msg.mediaType.startsWith("image")) mediaHTML = `<img src="${msg.mediaData}">`;
-        else if (msg.mediaType.startsWith("video")) mediaHTML = `<video src="${msg.mediaData}" controls></video>`;
-    }
-
-    div.innerHTML = `<b>${msg.from}</b>: ${msg.text || ""} ${mediaHTML} <br><small>${msg.time}</small>`;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-});
-
-/* =======================
-   Mood Tracer
-======================= */
-const moods = [
-    { e: "😔", t: "Missing You", b: "linear-gradient(#dfe9f3,#fff)" },
-    { e: "😌", t: "Calm Vibes", b: "linear-gradient(#e0f7fa,#fff)" },
-    { e: "😊", t: "Soft & Happy", b: "linear-gradient(#ffe6ea,#fff)" },
-    { e: "😍", t: "In Love", b: "linear-gradient(#ffccd5,#fff)" },
-    { e: "❤️", t: "Crazy About You", b: "linear-gradient(#ffb3c6,#fff)" }
-];
-
-function updateMood(value) {
-    const mood = moods[value];
-    document.body.style.background = mood.b;
-    document.getElementById("moodEmoji").textContent = mood.e;
-    document.getElementById("moodText").textContent = mood.t;
-}
-
-/* =======================
-   Memories & Media
-======================= */
-const memoryInput = document.getElementById("memoryInput");
-const memoryList = document.getElementById("memoryList");
-const mediaGallery = document.getElementById("mediaGallery");
-
-function loadMemories() {
-    const memories = JSON.parse(localStorage.getItem("memories")) || [];
-    memories.forEach(addMemoryToList);
-    const mediaItems = JSON.parse(localStorage.getItem("media")) || [];
-    mediaItems.forEach(m => displayMedia(m.type, m.data));
-}
-
-function addMemory() {
-    const text = memoryInput.value.trim();
-    if (!text) return;
-    const memories = JSON.parse(localStorage.getItem("memories")) || [];
-    memories.push(text);
-    localStorage.setItem("memories", JSON.stringify(memories));
-    addMemoryToList(text);
-    memoryInput.value = "";
-}
-
-function addMemoryToList(text) {
-    const li = document.createElement("li");
-    li.textContent = text;
-    memoryList.appendChild(li);
-}
-
-function uploadMedia(input) {
-    const file = input.files[0];
-    if (!file) return;
+  if(chatMedia.files.length){
     const reader = new FileReader();
-    reader.onload = () => {
-        const media = JSON.parse(localStorage.getItem("media")) || [];
-        media.push({ type: file.type, data: reader.result });
-        localStorage.setItem("media", JSON.stringify(media));
-        displayMedia(file.type, reader.result);
-    };
-    reader.readAsDataURL(file);
-}
-
-function displayMedia(type, data) {
-    const div = document.createElement("div");
-    div.className = "media";
-    if (type.startsWith("image")) {
-        const img = document.createElement("img");
-        img.src = data;
-        div.appendChild(img);
-    } else if (type.startsWith("video")) {
-        const video = document.createElement("video");
-        video.src = data;
-        video.controls = true;
-        div.appendChild(video);
-    }
-    mediaGallery.appendChild(div);
-}
-
-/* =======================
-   Sparkles & Hearts
-======================= */
-const sparkleLimit = 50;
-let sparkles = [];
-
-function createSparkle(x, y) {
-    if (sparkles.length > sparkleLimit) return;
-    const s = document.createElement("div");
-    s.className = "sparkle";
-    s.style.left = x + "px";
-    s.style.top = y + "px";
-    document.body.appendChild(s);
-    sparkles.push(s);
-    setTimeout(() => { s.remove(); sparkles = sparkles.filter(sp => sp !== s); }, 1000);
-}
-
-function createHeart(x, y) {
-    const heart = document.createElement("div");
-    heart.textContent = "❤️";
-    heart.style.position = "fixed";
-    heart.style.left = x + "px";
-    heart.style.top = y + "px";
-    heart.style.fontSize = Math.random() * 24 + 12 + "px";
-    heart.style.opacity = 1;
-    heart.style.pointerEvents = "none";
-    document.body.appendChild(heart);
-
-    let top = parseInt(heart.style.top);
-    let opacity = 1;
-    const interval = setInterval(() => {
-        top -= 2;
-        opacity -= 0.02;
-        heart.style.top = top + "px";
-        heart.style.opacity = opacity;
-        if (opacity <= 0) { clearInterval(interval); heart.remove(); }
-    }, 20);
-}
-
-document.addEventListener("mousemove", e => { createSparkle(e.clientX, e.clientY); });
-document.addEventListener("touchmove", e => {
-    const t = e.touches[0];
-    if (t) createSparkle(t.clientX, t.clientY);
+    reader.onload = () => pushMessage(name, text, reader.result, chatMedia.files[0].type);
+    reader.readAsDataURL(chatMedia.files[0]);
+  } else {
+    pushMessage(name, text, null, null);
+  }
+  chatInput.value=""; chatMedia.value="";
 });
 
-/* =======================
-   YouTube Player & Hearts
-======================= */
-let player;
-function onYouTubeIframeAPIReady() {
-    player = new YT.Player('songPlayer');
+function pushMessage(name, text, mediaData, mediaType){
+  messagesRef.push({ from:name, text, mediaData, mediaType, time:new Date().toLocaleTimeString() });
 }
 
-document.getElementById('playSongBtn').addEventListener('click', () => {
-    if (player && player.playVideo) {
-        player.playVideo();
-        document.addEventListener('mousemove', heartFollow);
-        document.addEventListener('touchmove', t => heartFollow(t.touches[0]));
-    }
+messagesRef.on("child_added", snapshot=>{
+  const msg = snapshot.val();
+  const div = document.createElement("div");
+  const currentUser = userNameInput.value.trim() || "Anonymous";
+  const isSelf = msg.from === currentUser;
+  div.className = "chat-message " + (isSelf ? "self" : "other");
+  let mediaHTML = "";
+  if(msg.mediaData){
+    if(msg.mediaType.startsWith("image")) mediaHTML=`<img src="${msg.mediaData}">`;
+    else if(msg.mediaType.startsWith("video")) mediaHTML=`<video src="${msg.mediaData}" controls></video>`;
+  }
+  div.innerHTML = `<b>${msg.from}</b>: ${msg.text || ""} ${mediaHTML} <br><small>${msg.time}</small>`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-function heartFollow(e) { createHeart(e.clientX, e.clientY); }
-
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-document.body.appendChild(tag);
-
-/* =======================
-   Background by Song Time
-======================= */
-const moodSections = [
-    { start: 0, end: 30, bg: "linear-gradient(to bottom right,#dfe9f3,#fff)" },
-    { start: 30, end: 60, bg: "linear-gradient(to bottom right,#e0f7fa,#fff)" },
-    { start: 60, end: 90, bg: "linear-gradient(to bottom right,#ffe6ea,#fff)" },
-    { start: 90, end: 120, bg: "linear-gradient(to bottom right,#ffccd5,#fff)" },
-    { start: 120, end: 180, bg: "linear-gradient(to bottom right,#ffb3c6,#fff)" }
+/* ===================== Mood ===================== */
+const moods = [
+  { e:"😔",t:"Missing You",b:"linear-gradient(#dfe9f3,#fff)" },
+  { e:"😌",t:"Calm Vibes",b:"linear-gradient(#e0f7fa,#fff)" },
+  { e:"😊",t:"Soft & Happy",b:"linear-gradient(#ffe6ea,#fff)" },
+  { e:"😍",t:"In Love",b:"linear-gradient(#ffccd5,#fff)" },
+  { e:"❤️",t:"Crazy About You",b:"linear-gradient(#ffb3c6,#fff)" }
 ];
-let lastMoodIndex = -1;
 
-setInterval(() => {
-    if (!player || !player.getCurrentTime) return;
-    const t = player.getCurrentTime();
-    for (let i = 0; i < moodSections.length; i++) {
-        if (t >= moodSections[i].start && t < moodSections[i].end) {
-            if (lastMoodIndex !== i) { document.body.style.background = moodSections[i].bg; lastMoodIndex = i; }
-            break;
-        }
-    }
-}, 500);
+function updateMood(v){
+  const m = moods[v];
+  document.body.style.background=m.b;
+  document.getElementById("moodEmoji").textContent=m.e;
+  document.getElementById("moodText").textContent=m.t;
+}
 
-/* =======================
-   Init
-======================= */
-window.onload = loadMemories;
+/* ===================== Memories ===================== */
+const memoryInput=document.getElementById("memoryInput");
+const memoryList=document.getElementById("memoryList");
+const mediaGallery=document.getElementById("mediaGallery");
+
+function loadMemories(){
+  (JSON.parse(localStorage.getItem("memories"))||[]).forEach(addMemoryToList);
+  (JSON.parse(localStorage.getItem("media"))||[]).forEach(m=>displayMedia(m.type,m.data));
+}
+function addMemory(){ 
+  const t=memoryInput.value.trim(); if(!t) return;
+  const mem=JSON.parse(localStorage.getItem("memories"))||[];
+  mem.push(t); localStorage.setItem("memories",JSON.stringify(mem));
+  addMemoryToList(t); memoryInput.value="";
+}
+function addMemoryToList(t){ const li=document.createElement("li"); li.textContent=t; memoryList.appendChild(li); }
+
+function uploadMedia(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const media=JSON.parse(localStorage.getItem("media"))||[];
+    media.push({type:file.type,data:reader.result});
+    localStorage.setItem("media",JSON.stringify(media));
+    displayMedia(file.type,reader.result);
+  };
+  reader.readAsDataURL(file);
+}
+function displayMedia(type,data){
+  const div=document.createElement("div"); div.className="media";
+  if(type.startsWith("image")){ const img=document.createElement("img"); img.src=data; div.appendChild(img);}
+  else{ const video=document.createElement("video"); video.src=data; video.controls=true; div.appendChild(video);}
+  mediaGallery.appendChild(div);
+}
+
+/* ===================== Sparkles & Hearts ===================== */
+document.addEventListener("mousemove", e=>{ createSparkle(e.clientX,e.clientY); createHeart(e.clientX,e.clientY); });
+document.addEventListener("touchmove", e=>{ const t=e.touches[0]; if(t){ createSparkle(t.clientX,t.clientY); createHeart(t.clientX,t.clientY); } });
+
+function createSparkle(x,y){
+  const s=document.createElement("div"); s.className="sparkle"; s.style.left=x+"px"; s.style.top=y+"px";
+  document.body.appendChild(s); setTimeout(()=>s.remove(),1000);
+}
+function createHeart(x,y){
+  const heart=document.createElement("div"); heart.textContent="❤️"; heart.style.position="fixed";
+  heart.style.left=x+"px"; heart.style.top=y+"px"; heart.style.fontSize=Math.random()*24+12+"px";
+  heart.style.opacity=1; heart.style.pointerEvents="none";
+  document.body.appendChild(heart);
+  let top=parseInt(heart.style.top); let opacity=1;
+  const interval=setInterval(()=>{
+    top-=2; opacity-=0.02; heart.style.top=top+"px"; heart.style.opacity=opacity;
+    if(opacity<=0){ clearInterval(interval); heart.remove(); }
+  },20);
+}
+
+/* ===================== YouTube ===================== */
+let player;
+function onYouTubeIframeAPIReady(){ player=new YT.Player('songPlayer'); }
+document.getElementById('playSongBtn').addEventListener('click',()=>{ if(player && player.playVideo){ player.playVideo(); } });
+const tag=document.createElement('script'); tag.src="https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
+
+/* ===================== Init ===================== */
+window.onload=loadMemories;
 </script>
 </body>
 </html>
